@@ -137,9 +137,15 @@ public abstract class RichParser<E> extends InputParser<E> {
                 }
             }
         }
-        if (!requireClosing && open > 0) {
-            arguments.add(input.substring(openIndex + 1));
-        }
+        if (!requireClosing)
+            if (open > 0) {
+                arguments.add(input.substring(openIndex + 1));
+            } else {
+                int last = input.lastIndexOf(']');
+                if (last != -1) {
+                    arguments.add(input.substring(last));
+                }
+            }
         if (requireClosing && open != 0) {
             throw new InputParseException("Invalid bracketing, are you missing a '[' or ']'?");
         }

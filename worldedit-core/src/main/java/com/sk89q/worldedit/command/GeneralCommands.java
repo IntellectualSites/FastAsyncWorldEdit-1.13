@@ -477,7 +477,7 @@ public class GeneralCommands {
         desc = "Set the global transform"
     )
     @CommandPermissions({"worldedit.global-transform", "worldedit.transform.global"})
-    public void gtransform(Player player, EditSession editSession, LocalSession session, ResettableExtent transform) throws WorldEditException {
+    public void gtransform(Player player, EditSession editSession, LocalSession session, @Arg(desc = "The transform to set", def = "") ResettableExtent transform) throws WorldEditException {
         session.setTransform(transform);
         if (transform == null) {
             player.print(TranslatableComponent.of("fawe.worldedit.general.transform.disabled"));

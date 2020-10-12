@@ -391,6 +391,14 @@ public interface Extent extends InputExtent, OutputExtent {
         return pt.containedWithin(min, max);
     }
 
+    default boolean contains(int x, int y, int z) {
+        BlockVector3 min = getMinimumPoint();
+        BlockVector3 max = getMaximumPoint();
+        return min.getX() <= x && max.getX() >= x
+                && min.getY() <= y && max.getY() >= y
+                && min.getZ() <= z && max.getZ() >= z;
+    }
+
     default void addOre(Region region, Mask mask, Pattern material, int size, int frequency, int rarity, int minY, int maxY) throws WorldEditException {
         spawnResource(region, new OreGen(this, mask, material, size, minY, maxY), rarity, frequency);
     }

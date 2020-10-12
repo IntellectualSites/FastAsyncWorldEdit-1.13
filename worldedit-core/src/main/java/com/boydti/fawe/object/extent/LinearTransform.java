@@ -25,7 +25,7 @@ public class LinearTransform extends SelectTransform {
         if (index == extentsArray.length) {
             index = 0;
         }
-        return extentsArray[index];
+        return extentsArray[index++];
     }
 
     @Override

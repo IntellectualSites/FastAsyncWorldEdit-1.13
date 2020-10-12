@@ -19,6 +19,7 @@
 
 package com.sk89q.worldedit.command.argument;
 
+import com.boydti.fawe.object.extent.ResettableExtent;
 import com.boydti.fawe.object.extent.SupplyingExtent;
 import com.sk89q.worldedit.EmptyClipboardException;
 import com.sk89q.worldedit.LocalSession;
@@ -62,6 +63,8 @@ public class FactoryConverter<T> implements ArgumentConverter<T> {
             new FactoryConverter<>(worldEdit, WorldEdit::getMaskFactory, "mask", null));
         commandManager.registerConverter(Key.of(BaseItem.class),
             new FactoryConverter<>(worldEdit, WorldEdit::getItemFactory, "item", null));
+        commandManager.registerConverter(Key.of(ResettableExtent.class),
+            new FactoryConverter<>(worldEdit, WorldEdit::getTransformFactory, "transform", null));
 
         commandManager.registerConverter(Key.of(Mask.class, ClipboardMask.class),
             new FactoryConverter<>(worldEdit, WorldEdit::getMaskFactory, "mask",

@@ -36,6 +36,7 @@ public abstract class FaweRegionExtent extends ResettableExtent implements IBatc
         this.limit = limit;
     }
 
+    @Override
     public abstract boolean contains(int x, int y, int z);
 
     public abstract boolean contains(int x, int z);
