@@ -19,11 +19,10 @@
 
 package com.sk89q.worldedit.fabric;
 
-import net.fabricmc.fabric.api.event.server.ServerTickCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -32,11 +31,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  * Caches data that cannot be accessed from another thread safely.
  */
-public class ThreadSafeCache implements ServerTickCallback {
+public class ThreadSafeCache implements ServerTickEvents.EndTick {
 
     private static final long REFRESH_DELAY = 1000 * 30;
     private static final ThreadSafeCache INSTANCE = new ThreadSafeCache();
-    private Set<UUID> onlineIds = Collections.emptySet();
+    private Set<UUID> onlineIds = new CopyOnWriteArraySet<>();
     private long lastRefresh = 0;
 
     /**
@@ -49,7 +48,7 @@ public class ThreadSafeCache implements ServerTickCallback {
     }
 
     @Override
-    public void tick(MinecraftServer server) {
+    public void onEndTick(MinecraftServer server) {
         long now = System.currentTimeMillis();
 
         if (now - lastRefresh > REFRESH_DELAY) {

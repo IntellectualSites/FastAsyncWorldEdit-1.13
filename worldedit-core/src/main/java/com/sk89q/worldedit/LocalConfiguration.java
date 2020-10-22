@@ -56,6 +56,7 @@ public abstract class LocalConfiguration {
     public boolean profile = false;
     public boolean traceUnflushedSessions = false;
     public Set<String> disallowedBlocks = new HashSet<>();
+    public Set<String> defaultAllowedDataCycleBlocks = new HashSet<>();
     protected BlockMask disallowedBlocksMask;
     public int defaultChangeLimit = -1;
     public int maxChangeLimit = -1;
@@ -166,6 +167,10 @@ public abstract class LocalConfiguration {
                 */
         );
         return blockTypes.stream().filter(Objects::nonNull).map(BlockType::getId).toArray(String[]::new);
+    }
+
+    protected String[] getDefaultAllowedDataCycleBlocks() {
+        return new String[0];
     }
 
     /**

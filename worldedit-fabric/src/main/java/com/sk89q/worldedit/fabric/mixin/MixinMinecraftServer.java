@@ -20,15 +20,22 @@
 package com.sk89q.worldedit.fabric.mixin;
 
 import com.sk89q.worldedit.extension.platform.Watchdog;
-import net.minecraft.server.ServerTask;
+import com.sk89q.worldedit.fabric.internal.ExtendedMinecraftServer;
+import net.minecraft.resource.ServerResourceManager;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.NonBlockingThreadExecutor;
-import net.minecraft.util.SystemUtil;
+import net.minecraft.server.ServerTask;
+import net.minecraft.util.Util;
+import net.minecraft.util.thread.ReentrantThreadExecutor;
+import net.minecraft.world.World;
+import net.minecraft.world.level.storage.LevelStorage;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+import java.nio.file.Path;
 
 @Mixin(MinecraftServer.class)
-public abstract class MixinMinecraftServer extends NonBlockingThreadExecutor<ServerTask> implements Watchdog {
+public abstract class MixinMinecraftServer extends ReentrantThreadExecutor<ServerTask> implements Watchdog, ExtendedMinecraftServer {
 
     public MixinMinecraftServer(String name) {
         super(name);
@@ -36,10 +43,20 @@ public abstract class MixinMinecraftServer extends NonBlockingThreadExecutor<Ser
 
     @Shadow
     private long timeReference;
+    @Shadow
+    protected LevelStorage.Session session;
 
     @Override
     public void tick() {
-        timeReference = SystemUtil.getMeasuringTimeMs();
+        timeReference = Util.getMeasuringTimeMs();
     }
 
+    @Override
+    public Path getStoragePath(World world) {
+        return session.getWorldDirectory(world.getRegistryKey()).toPath();
+    }
+
+    @Accessor()
+    @Override
+    public abstract ServerResourceManager getServerResourceManager();
 }

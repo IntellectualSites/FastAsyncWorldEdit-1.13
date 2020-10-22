@@ -91,7 +91,7 @@ public class PropertiesConfiguration extends LocalConfiguration {
         disallowedBlocks = getStringSet("disallowed-blocks", getDefaultDisallowedBlocks());
         disallowedBlocksMask = null;
         allowedDataCycleBlocks =
-                new HashSet<>(getStringSet("limits.allowed-data-cycle-blocks", null));
+                new HashSet<>(getStringSet("limits.allowed-data-cycle-blocks", getDefaultAllowedDataCycleBlocks()));
         defaultChangeLimit = getInt("default-max-changed-blocks", defaultChangeLimit);
         maxChangeLimit = getInt("max-changed-blocks", maxChangeLimit);
         defaultVerticalHeight = getInt("default-vertical-height", defaultVerticalHeight);

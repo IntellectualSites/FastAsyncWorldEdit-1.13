@@ -19,8 +19,6 @@
 
 package com.sk89q.worldedit.fabric;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.entity.metadata.EntityProperties;
@@ -35,8 +33,9 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 
 import java.lang.ref.WeakReference;
-
 import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 class FabricEntity implements Entity {
 
@@ -64,7 +63,7 @@ class FabricEntity implements Entity {
     public Location getLocation() {
         net.minecraft.entity.Entity entity = entityRef.get();
         if (entity != null) {
-            Vector3 position = Vector3.at(entity.x, entity.y, entity.z);
+            Vector3 position = Vector3.at(entity.getX(), entity.getY(), entity.getZ());
             float yaw = entity.yaw;
             float pitch = entity.pitch;
 

@@ -31,13 +31,15 @@ import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
+
 public class FabricWorldNativeAccess implements WorldNativeAccess<WorldChunk, BlockState, BlockPos> {
-    private static final int UPDATE = 1, NOTIFY = 2;
+    private static final int UPDATE = 1;
+    private static final int NOTIFY = 2;
 
     private final WeakReference<World> world;
 
@@ -75,7 +77,7 @@ public class FabricWorldNativeAccess implements WorldNativeAccess<WorldChunk, Bl
 
     @Override
     public BlockState getValidBlockForPosition(BlockState block, BlockPos position) {
-        return Block.getRenderingState(block, getWorld(), position);
+        return Block.postProcessState(block, getWorld(), position);
     }
 
     @Override
@@ -96,7 +98,7 @@ public class FabricWorldNativeAccess implements WorldNativeAccess<WorldChunk, Bl
             return false;
         }
         tileEntity.setLocation(getWorld(), position);
-        tileEntity.fromTag(nativeTag);
+        tileEntity.fromTag(getWorld().getBlockState(position), nativeTag);
         return true;
     }
 
@@ -119,17 +121,16 @@ public class FabricWorldNativeAccess implements WorldNativeAccess<WorldChunk, Bl
     public void notifyNeighbors(BlockPos pos, BlockState oldState, BlockState newState) {
         getWorld().updateNeighbors(pos, oldState.getBlock());
         if (newState.hasComparatorOutput()) {
-            getWorld().updateHorizontalAdjacent(pos, newState.getBlock());
+            getWorld().updateComparators(pos, newState.getBlock());
         }
     }
 
     @Override
-    public void updateNeighbors(BlockPos pos, BlockState oldState, BlockState newState) {
+    public void updateNeighbors(BlockPos pos, BlockState oldState, BlockState newState, int recursionLimit) {
         World world = getWorld();
-        // method_11637 = updateDiagonalNeighbors
-        oldState.method_11637(world, pos, NOTIFY);
-        newState.updateNeighborStates(world, pos, NOTIFY);
-        newState.method_11637(world, pos, NOTIFY);
+        oldState.prepare(world, pos, NOTIFY, recursionLimit);
+        newState.updateNeighbors(world, pos, NOTIFY, recursionLimit);
+        newState.prepare(world, pos, NOTIFY, recursionLimit);
     }
 
     @Override

@@ -20,6 +20,7 @@
 package com.sk89q.worldedit.fabric;
 
 import com.google.common.collect.Sets;
+import com.mojang.brigadier.CommandDispatcher;
 import com.sk89q.worldedit.command.util.PermissionCondition;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.AbstractPlatform;
@@ -35,15 +36,16 @@ import com.sk89q.worldedit.world.registry.Registries;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.level.ServerWorldProperties;
 import org.enginehub.piston.Command;
 import org.enginehub.piston.CommandManager;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +53,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 
 import static java.util.stream.Collectors.toList;
 
@@ -61,10 +64,12 @@ class FabricPlatform extends AbstractPlatform implements MultiUserPlatform {
     private final FabricDataFixer dataFixer;
     private final @Nullable Watchdog watchdog;
     private boolean hookingEvents = false;
+    private CommandDispatcher<ServerCommandSource> nativeDispatcher;
 
     FabricPlatform(FabricWorldEdit mod, MinecraftServer server) {
         this.mod = mod;
         this.server = server;
+        this.nativeDispatcher = server.getCommandManager().getDispatcher();
         this.dataFixer = new FabricDataFixer(getDataVersion());
         this.watchdog = server instanceof MinecraftDedicatedServer
             ? (Watchdog) server : null;
@@ -138,7 +143,7 @@ class FabricPlatform extends AbstractPlatform implements MultiUserPlatform {
             return world;
         } else {
             for (ServerWorld ws : server.getWorlds()) {
-                if (ws.getLevelProperties().getLevelName().equals(world.getName())) {
+                if (((ServerWorldProperties) ws.getLevelProperties()).getLevelName().equals(world.getName())) {
                     return new FabricWorld(ws);
                 }
             }
@@ -147,13 +152,18 @@ class FabricPlatform extends AbstractPlatform implements MultiUserPlatform {
         }
     }
 
+    public void setNativeDispatcher(CommandDispatcher<ServerCommandSource> nativeDispatcher) {
+        this.nativeDispatcher = nativeDispatcher;
+    }
+
     @Override
     public void registerCommands(CommandManager manager) {
-        if (server == null) return;
-        net.minecraft.server.command.CommandManager mcMan = server.getCommandManager();
+        if (server == null) {
+            return;
+        }
 
         for (Command command : manager.getAllCommands().collect(toList())) {
-            CommandWrapper.register(mcMan.getDispatcher(), command);
+            CommandWrapper.register(nativeDispatcher, command);
             Set<String> perms = command.getCondition().as(PermissionCondition.class)
                 .map(PermissionCondition::getPermissions)
                 .orElseGet(Collections::emptySet);

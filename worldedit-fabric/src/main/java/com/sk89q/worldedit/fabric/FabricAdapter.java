@@ -19,8 +19,6 @@
 
 package com.sk89q.worldedit.fabric;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.collect.ImmutableList;
 import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.jnbt.Tag;
@@ -45,8 +43,9 @@ import com.sk89q.worldedit.world.item.ItemTypes;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.state.StateFactory;
+import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
@@ -57,10 +56,25 @@ import net.minecraft.world.biome.Biome;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FabricAdapter {
+
+    @Nullable
+    private static MinecraftServer server;
+
+    private static MinecraftServer requireServer() {
+        return Objects.requireNonNull(server, "No server injected");
+    }
+
+    static void setServer(@Nullable MinecraftServer server) {
+        FabricAdapter.server = server;
+    }
 
     private FabricAdapter() {
     }
@@ -70,11 +84,16 @@ public final class FabricAdapter {
     }
 
     public static Biome adapt(BiomeType biomeType) {
-        return Registry.BIOME.get(new Identifier(biomeType.getId()));
+        return requireServer()
+            .getRegistryManager()
+            .get(Registry.BIOME_KEY)
+            .get(new Identifier(biomeType.getId()));
     }
 
     public static BiomeType adapt(Biome biome) {
-        return BiomeTypes.get(Registry.BIOME.getId(biome).toString());
+        Identifier id = requireServer().getRegistryManager().get(Registry.BIOME_KEY).getId(biome);
+        Objects.requireNonNull(id, "biome is not registered");
+        return BiomeTypes.get(id.toString());
     }
 
     public static Vector3 adapt(Vec3d vector) {
@@ -102,7 +121,10 @@ public final class FabricAdapter {
         }
     }
 
-    public static Direction adaptEnumFacing(net.minecraft.util.math.Direction face) {
+    public static Direction adaptEnumFacing(@Nullable net.minecraft.util.math.Direction face) {
+        if (face == null) {
+            return null;
+        }
         switch (face) {
             case NORTH: return Direction.NORTH;
             case SOUTH: return Direction.SOUTH;
@@ -155,8 +177,9 @@ public final class FabricAdapter {
         return props;
     }
 
-    private static net.minecraft.block.BlockState applyProperties(StateFactory<Block, net.minecraft.block.BlockState> stateContainer,
-            net.minecraft.block.BlockState newState, Map<Property<?>, Object> states) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static net.minecraft.block.BlockState applyProperties(StateManager<Block, net.minecraft.block.BlockState> stateContainer,
+                                                                  net.minecraft.block.BlockState newState, Map<Property<?>, Object> states) {
         for (Map.Entry<Property<?>, Object> state : states.entrySet()) {
             net.minecraft.state.property.Property property = stateContainer.getProperty(state.getKey().getName());
             Comparable value = (Comparable) state.getValue();
@@ -166,7 +189,7 @@ public final class FabricAdapter {
                 value = adapt(dir);
             } else if (property instanceof net.minecraft.state.property.EnumProperty) {
                 String enumName = (String) value;
-                value = ((net.minecraft.state.property.EnumProperty<?>) property).getValue((String) value).orElseGet(() -> {
+                value = ((net.minecraft.state.property.EnumProperty<?>) property).parse((String) value).orElseGet(() -> {
                     throw new IllegalStateException("Enum property " + property.getName() + " does not contain " + enumName);
                 });
             }
@@ -180,7 +203,7 @@ public final class FabricAdapter {
         Block mcBlock = adapt(blockState.getBlockType());
         net.minecraft.block.BlockState newState = mcBlock.getDefaultState();
         Map<Property<?>, Object> states = blockState.getStates();
-        return applyProperties(mcBlock.getStateFactory(), newState, states);
+        return applyProperties(mcBlock.getStateManager(), newState, states);
     }
 
     public static BlockState adapt(net.minecraft.block.BlockState blockState) {

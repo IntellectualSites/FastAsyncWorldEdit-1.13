@@ -30,7 +30,7 @@ public interface FabricPermissionsProvider {
 
     class VanillaPermissionsProvider implements FabricPermissionsProvider {
 
-        private FabricPlatform platform;
+        private final FabricPlatform platform;
 
         public VanillaPermissionsProvider(FabricPlatform platform) {
             this.platform = platform;
@@ -39,12 +39,13 @@ public interface FabricPermissionsProvider {
         @Override
         public boolean hasPermission(ServerPlayerEntity player, String permission) {
             FabricConfiguration configuration = platform.getConfiguration();
-            return configuration.cheatMode ||
-                    player.server.getPlayerManager().isOperator(player.getGameProfile()) ||
-                    (configuration.creativeEnable && player.interactionManager.getGameMode() == GameMode.CREATIVE);
+            return configuration.cheatMode
+                || player.server.getPlayerManager().isOperator(player.getGameProfile())
+                || (configuration.creativeEnable && player.interactionManager.getGameMode() == GameMode.CREATIVE);
         }
 
         @Override
-        public void registerPermission(String permission) {}
+        public void registerPermission(String permission) {
+        }
     }
 }

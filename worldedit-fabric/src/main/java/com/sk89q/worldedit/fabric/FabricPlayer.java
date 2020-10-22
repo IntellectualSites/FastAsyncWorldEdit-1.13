@@ -25,8 +25,8 @@ import com.sk89q.worldedit.blocks.BaseItemStack;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.extension.platform.AbstractPlayerActor;
 import com.sk89q.worldedit.extent.inventory.BlockBag;
+import com.sk89q.worldedit.fabric.internal.ExtendedPlayerEntity;
 import com.sk89q.worldedit.fabric.internal.NBTConverter;
-import com.sk89q.worldedit.fabric.mixin.AccessorServerPlayerEntity;
 import com.sk89q.worldedit.fabric.net.handler.WECUIPacketHandler;
 import com.sk89q.worldedit.internal.cui.CUIEvent;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -35,6 +35,7 @@ import com.sk89q.worldedit.session.SessionKey;
 import com.sk89q.worldedit.util.HandSide;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.util.formatting.WorldEditText;
+import com.sk89q.worldedit.util.formatting.component.TextUtils;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.serializer.gson.GsonComponentSerializer;
 import com.sk89q.worldedit.world.World;
@@ -44,22 +45,23 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import io.netty.buffer.Unpooled;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 public class FabricPlayer extends AbstractPlayerActor {
 
@@ -85,7 +87,7 @@ public class FabricPlayer extends AbstractPlayerActor {
 
     @Override
     public String getName() {
-        return this.player.getName().asFormattedString();
+        return this.player.getName().asString();
     }
 
     @Override
@@ -95,7 +97,7 @@ public class FabricPlayer extends AbstractPlayerActor {
 
     @Override
     public Location getLocation() {
-        Vector3 position = Vector3.at(this.player.x, this.player.y, this.player.z);
+        Vector3 position = Vector3.at(this.player.getX(), this.player.getY(), this.player.getZ());
         return new Location(
                 FabricWorldEdit.inst.getWorld(this.player.world),
                 position,
@@ -133,41 +135,45 @@ public class FabricPlayer extends AbstractPlayerActor {
 
     @Override
     public Locale getLocale() {
-        return Locale.forLanguageTag(((AccessorServerPlayerEntity) this.player).getClientLanguage().replace("_", "-"));
+        return TextUtils.getLocaleByMinecraftTag(((ExtendedPlayerEntity) this.player).getLanguage());
     }
 
     @Override
+    @Deprecated
     public void printRaw(String msg) {
         for (String part : msg.split("\n")) {
-            this.player.sendMessage(new LiteralText(part));
+            this.player.sendMessage(new LiteralText(part), false);
         }
     }
 
     @Override
+    @Deprecated
     public void printDebug(String msg) {
         sendColorized(msg, Formatting.GRAY);
     }
 
     @Override
+    @Deprecated
     public void print(String msg) {
         sendColorized(msg, Formatting.LIGHT_PURPLE);
     }
 
     @Override
+    @Deprecated
     public void printError(String msg) {
         sendColorized(msg, Formatting.RED);
     }
 
     @Override
     public void print(Component component) {
-        this.player.sendMessage(Text.Serializer.fromJson(GsonComponentSerializer.INSTANCE.serialize(WorldEditText.format(component, getLocale()))));
+        this.player.sendMessage(Text.Serializer.fromJson(GsonComponentSerializer.INSTANCE.serialize(WorldEditText.format(component, getLocale()))), false);
     }
 
     private void sendColorized(String msg, Formatting formatting) {
         for (String part : msg.split("\n")) {
-            LiteralText component = new LiteralText(part);
-            component.getStyle().setColor(formatting);
-            this.player.sendMessage(component);
+            MutableText component = new LiteralText(part)
+                .styled(style -> style.withColor(formatting));
+            this.player.sendMessage(component, false);
         }
     }
 
@@ -190,6 +196,11 @@ public class FabricPlayer extends AbstractPlayerActor {
     @Override
     public boolean hasPermission(String perm) {
         return FabricWorldEdit.inst.getPermissionsProvider().hasPermission(player, perm);
+    }
+
+    @Override
+    public void setPermission(String permission, boolean value) {
+
     }
 
     @Nullable
@@ -244,6 +255,11 @@ public class FabricPlayer extends AbstractPlayerActor {
                 }
             }
         }
+    }
+
+    @Override
+    public void sendTitle(Component title, Component sub) {
+
     }
 
     @Override

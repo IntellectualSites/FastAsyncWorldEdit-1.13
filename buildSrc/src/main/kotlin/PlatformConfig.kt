@@ -127,6 +127,18 @@ fun Project.applyShadowConfiguration() {
     }
 }
 
+fun Project.addJarManifest(includeClasspath: Boolean = false) {
+    tasks.named<Jar>("jar") {
+        val attributes = mutableMapOf(
+                "WorldEdit-Version" to project(":worldedit-core").version
+        )
+        if (includeClasspath) {
+            attributes["Class-Path"] = CLASSPATH
+        }
+        manifest.attributes(attributes)
+    }
+}
+
 val CLASSPATH = listOf("truezip", "truevfs", "js")
     .map { "$it.jar" }
     .flatMap { listOf(it, "WorldEdit/$it") }
