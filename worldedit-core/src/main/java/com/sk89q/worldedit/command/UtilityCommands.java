@@ -693,7 +693,7 @@ public class UtilityCommands {
         }
 
         session.remember(editSession);
-        editSession.flushSession();
+        editSession.close();
         return killed;
     }
 

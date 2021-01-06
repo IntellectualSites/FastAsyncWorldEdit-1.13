@@ -3,18 +3,18 @@
  * Copyright (C) sk89q <http://www.sk89q.com>
  * Copyright (C) WorldEdit team and contributors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.sk89q.worldedit.event.extent;
@@ -24,10 +24,13 @@ import com.sk89q.worldedit.event.Cancellable;
 import com.sk89q.worldedit.event.Event;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extent.Extent;
+import com.sk89q.worldedit.extent.TracingExtent;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -66,7 +69,9 @@ public class EditSessionEvent extends Event implements Cancellable {
     private final Actor actor;
     private final int maxBlocks;
     private final Stage stage;
+    private final List<TracingExtent> tracingExtents = new ArrayList<>();
     private Extent extent;
+    private boolean tracing;
     private boolean cancelled;
 
     /**
@@ -139,6 +144,11 @@ public class EditSessionEvent extends Event implements Cancellable {
      */
     public void setExtent(Extent extent) {
         checkNotNull(extent);
+        if (tracing && extent != this.extent) {
+            TracingExtent tracingExtent = new TracingExtent(extent);
+            extent = tracingExtent;
+            tracingExtents.add(tracingExtent);
+        }
         this.extent = extent;
     }
 
@@ -150,6 +160,25 @@ public class EditSessionEvent extends Event implements Cancellable {
     @Override
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;
+    }
+
+    /**
+     * Set tracing enabled, with the current extent as the "base".
+     *
+     * <em>Internal use only.</em>
+     * @param tracing if tracing is enabled
+     */
+    public void setTracing(boolean tracing) {
+        this.tracing = tracing;
+    }
+
+    /**
+     * Get the current list of tracing extents.
+     *
+     * <em>Internal use only.</em>
+     */
+    public List<TracingExtent> getTracingExtents() {
+        return tracingExtents;
     }
 
     /**

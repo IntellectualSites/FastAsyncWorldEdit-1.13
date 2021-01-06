@@ -3,18 +3,18 @@
  * Copyright (C) sk89q <http://www.sk89q.com>
  * Copyright (C) WorldEdit team and contributors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.sk89q.worldedit;
@@ -167,6 +167,7 @@ public class LocalSession implements TextureHolder {
     private transient World worldOverride;
     private transient boolean tickingWatchdog = false;
     private transient boolean hasBeenToldVersion;
+    private transient boolean tracingActions;
 
     // Saved properties
     private String lastScript;
@@ -641,6 +642,14 @@ public class LocalSession implements TextureHolder {
 
     public void setTickingWatchdog(boolean tickingWatchdog) {
         this.tickingWatchdog = tickingWatchdog;
+    }
+
+    public boolean isTracingActions() {
+        return tracingActions;
+    }
+
+    public void setTracingActions(boolean tracingActions) {
+        this.tracingActions = tracingActions;
     }
 
     /**
@@ -1520,7 +1529,11 @@ public class LocalSession implements TextureHolder {
         }
 
         // Create an edit session
-        EditSession editSession;
+        EditSessionBuilder builder = WorldEdit.getInstance().newEditSessionBuilder()
+            .world(world)
+            .actor(actor)
+            .maxBlocks(getBlockChangeLimit())
+            .tracing(isTracingActions());
         EditSessionBuilder builder = new EditSessionBuilder(world);
         if (actor.isPlayer() && actor instanceof Player) {
             BlockBag blockBag = getBlockBag((Player) actor);
@@ -1529,6 +1542,8 @@ public class LocalSession implements TextureHolder {
         }
         builder.command(command);
         builder.fastmode(!this.sideEffectSet.doesApplyAny());
+        EditSession editSession = builder.build();
+        Request.request().setEditSession(editSession);
 
         editSession = builder.build();
 
