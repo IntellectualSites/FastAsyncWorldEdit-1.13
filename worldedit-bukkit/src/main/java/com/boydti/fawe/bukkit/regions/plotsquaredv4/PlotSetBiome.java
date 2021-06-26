@@ -76,7 +76,7 @@ public class PlotSetBiome extends Command {
                         .autoQueue(false)
                         .checkMemory(false)
                         .allowedRegionsEverywhere()
-                        .player(BukkitAdapter.adapt(Bukkit.getPlayer(player.getUUID())))
+                        .actor(BukkitAdapter.adapt(Bukkit.getPlayer(player.getUUID())))
                         .limitUnlimited()
                         .build();
                 long seed = ThreadLocalRandom.current().nextLong();

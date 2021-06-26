@@ -32,7 +32,7 @@ public class FuzzyRegionSelector extends PassthroughExtent implements RegionSele
 
     public FuzzyRegionSelector(Player player, @Nullable World world, Mask mask) {
         super(new EditSessionBuilder(world)
-                .player(player)
+                .actor(player)
                 .changeSetNull()
                 .checkMemory(false)
                 .autoQueue(false)
@@ -52,7 +52,7 @@ public class FuzzyRegionSelector extends PassthroughExtent implements RegionSele
     @Override
     public void setWorld(@Nullable World world) {
         EditSession extent = new EditSessionBuilder(world)
-                .player(player)
+                .actor(player)
                 .changeSetNull()
                 .checkMemory(false)
                 .autoQueue(true)

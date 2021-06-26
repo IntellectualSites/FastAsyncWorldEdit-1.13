@@ -25,7 +25,6 @@ import com.boydti.fawe.object.FaweLimit;
 import com.boydti.fawe.util.task.InterruptableCondition;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.entity.MapMetadatable;
-import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.internal.cui.CUIEvent;
 import com.sk89q.worldedit.session.SessionOwner;
 import com.sk89q.worldedit.session.request.Request;
@@ -35,7 +34,6 @@ import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.format.TextColor;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -234,8 +232,8 @@ public interface Actor extends Identifiable, SessionOwner, Subject, MapMetadatab
         for (Request request : Request.getAll()) {
             EditSession editSession = request.getEditSession();
             if (editSession != null) {
-                Player player = editSession.getPlayer();
-                if (equals(player)) {
+                Actor actor = editSession.getActor();
+                if (equals(actor)) {
                     editSession.cancel();
                     cancelled++;
                 }

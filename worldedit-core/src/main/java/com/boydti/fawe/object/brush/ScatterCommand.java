@@ -6,6 +6,7 @@ import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.platform.CommandEvent;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extension.platform.PlatformCommandManager;
 import com.sk89q.worldedit.function.pattern.Pattern;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -31,7 +32,11 @@ public class ScatterCommand extends ScatterBrush {
                 .replace("{world}", editSession.getWorld().getName())
                 .replace("{size}", Integer.toString(radius));
 
-        Player player = editSession.getPlayer();
+        Actor actor = editSession.getActor();
+        if (!(actor instanceof Player)) {
+            return; //todo throw error
+        }
+        Player player = (Player) actor;
         player.setSelection(selector);
         List<String> cmds = StringMan.split(replaced, ';');
         for (String cmd : cmds) {

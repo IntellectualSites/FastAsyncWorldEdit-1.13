@@ -501,7 +501,7 @@
 //    }
 //
 //    @Override
-//    public FawePlayer getPlayer() {
+//    public FawePlayer getActor() {
 //        return player;
 //    }
 //
@@ -567,7 +567,7 @@
 //        clear();
 //        chunks.clear();
 //        files.clear();
-//        player.getPlayer().setPosition(origin, origin.getPitch(), origin.getYaw());
+//        player.getActor().setPosition(origin, origin.getPitch(), origin.getYaw());
 //        if (update) {
 //            IQueueExtent packetQueue = SetQueue.IMP.getNewQueue(player.getWorld(), true, false);
 //

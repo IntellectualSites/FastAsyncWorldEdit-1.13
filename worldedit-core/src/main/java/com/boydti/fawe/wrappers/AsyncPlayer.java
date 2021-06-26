@@ -147,7 +147,7 @@ public class AsyncPlayer extends PlayerProxy {
             RuntimeException caught = null;
             try {
                 EditSession edit =
-                    new EditSessionBuilder(WorldWrapper.unwrap(getWorld())).player(unwrap(getBasePlayer())).build();
+                    new EditSessionBuilder(WorldWrapper.unwrap(getWorld())).actor(unwrap(getBasePlayer())).build();
                 edit.setBlock(BlockVector3.at(x, y - 1, z), BlockTypes.GLASS);
                 edit.flushQueue();
                 LocalSession session = Fawe.get().getWorldEdit().getSessionManager().get(this);

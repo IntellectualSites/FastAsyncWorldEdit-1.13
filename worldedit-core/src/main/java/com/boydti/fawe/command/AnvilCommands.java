@@ -112,7 +112,7 @@ public class AnvilCommands {
     //        } else {
     //            AnvilHistory history = new AnvilHistory(world.getName(), fp.getUUID());
     //            run.accept(history);
-    //            session.remember(fp.getPlayer(), world, history, fp.getLimit());
+    //            session.remember(fp.getActor(), world, history, fp.getLimit());
     //        }
     //    }
 

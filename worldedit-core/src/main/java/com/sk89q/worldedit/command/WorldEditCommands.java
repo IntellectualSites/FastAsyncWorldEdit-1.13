@@ -29,6 +29,7 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.command.util.CommandPermissions;
 import com.sk89q.worldedit.command.util.CommandPermissionsConditionGenerator;
+import com.sk89q.worldedit.command.util.HookMode;
 import com.sk89q.worldedit.command.util.PrintCommandHelp;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.platform.ConfigurationLoadEvent;
@@ -39,6 +40,7 @@ import com.sk89q.worldedit.extension.platform.PlatformManager;
 import com.sk89q.worldedit.util.formatting.component.MessageBox;
 import com.sk89q.worldedit.util.formatting.component.TextComponentProducer;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
+import com.sk89q.worldedit.util.formatting.text.TranslatableComponent;
 import com.sk89q.worldedit.util.formatting.text.event.ClickEvent;
 import com.sk89q.worldedit.util.formatting.text.event.HoverEvent;
 import com.sk89q.worldedit.util.formatting.text.format.TextColor;
@@ -170,6 +172,28 @@ public class WorldEditCommands {
                 actor.printDebug(TextComponent.of(elem.toString()));
             }
         }
+    }
+
+    @Command(
+        name = "trace",
+        desc = "Toggles trace hook"
+    )
+    void trace(Actor actor, LocalSession session,
+               @Arg(desc = "The mode to set the trace hook to", def = "")
+                   HookMode hookMode) {
+        boolean previousMode = session.isTracingActions();
+        boolean newMode;
+        if (hookMode != null) {
+            newMode = hookMode == HookMode.ACTIVE;
+            if (newMode == previousMode) {
+                actor.printError(TranslatableComponent.of(previousMode ? "worldedit.trace.active.already" : "worldedit.trace.inactive.already"));
+                return;
+            }
+        } else {
+            newMode = !previousMode;
+        }
+        session.setTracingActions(newMode);
+        actor.printInfo(TranslatableComponent.of(newMode ? "worldedit.trace.active" : "worldedit.trace.inactive"));
     }
 
     @Command(

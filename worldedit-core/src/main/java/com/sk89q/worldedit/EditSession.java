@@ -46,11 +46,13 @@ import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.extent.EditSessionEvent;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extent.AbstractDelegateExtent;
 import com.sk89q.worldedit.extent.ChangeSetExtent;
 import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.extent.MaskingExtent;
 import com.sk89q.worldedit.extent.PassthroughExtent;
+import com.sk89q.worldedit.extent.TracingExtent;
 import com.sk89q.worldedit.extent.inventory.BlockBag;
 import com.sk89q.worldedit.extent.inventory.BlockBagExtent;
 import com.sk89q.worldedit.extent.world.SurvivalModeExtent;
@@ -125,7 +127,10 @@ import com.sk89q.worldedit.util.Direction;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.util.SideEffectSet;
 import com.sk89q.worldedit.util.TreeGenerator;
+import com.sk89q.worldedit.util.collection.BlockMap;
 import com.sk89q.worldedit.util.eventbus.EventBus;
+import com.sk89q.worldedit.util.formatting.text.TextComponent;
+import com.sk89q.worldedit.util.formatting.text.TranslatableComponent;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.biome.BiomeType;
 import com.sk89q.worldedit.world.block.BaseBlock;
@@ -145,11 +150,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -208,10 +215,10 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
 
     @SuppressWarnings("ProtectedField")
     protected final World world;
+    private final @Nullable Actor actor;
+    private AbstractChangeSet changeSet;
     private final FaweLimit originalLimit;
     private final FaweLimit limit;
-    private final Player player;
-    private AbstractChangeSet changeSet;
     private boolean history;
 
     private final MutableBlockVector3 mutablebv = new MutableBlockVector3();
@@ -228,17 +235,17 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
 
     private final Relighter relighter;
     private final boolean wnaMode;
-
     @Nullable
     private final Region[] allowedRegions;
+    private @Nullable List<TracingExtent> tracingExtents = null;
 
     @Deprecated
-    public EditSession(@NotNull EventBus bus, World world, @Nullable Player player,
+    public EditSession(@NotNull EventBus bus, World world, @Nullable Player actor,
         @Nullable FaweLimit limit, @Nullable AbstractChangeSet changeSet,
         @Nullable RegionWrapper[] allowedRegions, @Nullable Boolean autoQueue,
         @Nullable Boolean fastmode, @Nullable Boolean checkMemory, @Nullable Boolean combineStages,
         @Nullable BlockBag blockBag, @Nullable EditSessionEvent event) {
-        this(new EditSessionBuilder(world).player(player).limit(limit).changeSet(changeSet).allowedRegions(allowedRegions).autoQueue(autoQueue).fastmode(fastmode).checkMemory(checkMemory).combineStages(combineStages).blockBag(blockBag).eventBus(bus).event(event));
+        this(new EditSessionBuilder(world).actor(actor).limit(limit).changeSet(changeSet).allowedRegions(allowedRegions).autoQueue(autoQueue).fastmode(fastmode).checkMemory(checkMemory).combineStages(combineStages).blockBag(blockBag).eventBus(bus).event(event));
     }
 
     /**
@@ -248,9 +255,10 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
      * @param world the world
      * @param maxBlocks the maximum number of blocks that can be changed, or -1 to use no limit
      * @param blockBag an optional {@link BlockBag} to use, otherwise null
-     * @param event the event to call with the extent
+     * @param actor the actor that owns the session
+     * @param tracing if tracing is enabled. An actor is required if this is {@code true}
      */
-    public EditSession(@NotNull EventBus eventBus, World world, int maxBlocks, @Nullable BlockBag blockBag, EditSessionEvent event) {
+    public EditSession(EventBus eventBus, World world, int maxBlocks, @Nullable BlockBag blockBag, EditSessionEvent event) {
         this(eventBus, world, null, null, null, null, true, null, null, null, blockBag, event);
     }
 
@@ -261,7 +269,7 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
         this.bypassAll = builder.getBypassAll();
         this.originalLimit = builder.getLimit();
         this.limit = builder.getLimit().copy();
-        this.player = builder.getPlayer();
+        this.actor = builder.getActor();
         this.changeSet = builder.getChangeTask();
         this.minY = world.getMinY();
         this.maxY = world.getMaxY();
@@ -269,6 +277,13 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
         this.history = changeSet != null;
         this.relighter = builder.getRelighter();
         this.wnaMode = builder.isWNAMode();
+        if (builder.isTracing()) {
+            this.tracingExtents = new ArrayList<>();
+            checkNotNull(actor, "A player is required while tracing");
+        } else {
+            this.tracingExtents = null;
+        }
+
         this.allowedRegions = builder.getAllowedRegions() != null ? builder.getAllowedRegions().clone() : null;
     }
 
@@ -343,14 +358,48 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
      *
      * @return the player
      */
-    @Nullable
-    public Player getPlayer() {
-        return player;
+    public Actor getActor() {
+        return actor;
+    }
+
+    private Extent traceIfNeeded(Extent input) {
+        Extent output = input;
+        if (tracingExtents != null) {
+            TracingExtent newExtent = new TracingExtent(input);
+            output = newExtent;
+            tracingExtents.add(newExtent);
+        }
+        return output;
+    }
+
+    private Extent wrapExtent(Extent extent, EventBus eventBus, EditSessionEvent event, Stage stage) {
+        // NB: the event does its own tracing
+        event = event.clone(stage);
+        event.setExtent(extent);
+        boolean tracing = tracingExtents != null;
+        event.setTracing(tracing);
+        eventBus.post(event);
+        if (tracing) {
+            tracingExtents.addAll(event.getTracingExtents());
+        }
+        return event.getExtent();
     }
 
     // pkg private for TracedEditSession only, may later become public API
     boolean commitRequired() {
         return false;
+    }
+
+    /**
+     * Get the current list of active tracing extents.
+     */
+    private List<TracingExtent> getActiveTracingExtents() {
+        if (tracingExtents == null) {
+            return List.of();
+        }
+        return tracingExtents.stream()
+            .filter(TracingExtent::isActive)
+            .collect(Collectors.toList());
     }
 
     /**
@@ -718,7 +767,7 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
                     }
                 }
 
-                player.print(Caption.of("fawe.error.worldedit.some.fails.blockbag", str.toString()));
+                actor.print(Caption.of("fawe.error.worldedit.some.fails.blockbag", str.toString()));
             }
         }
         return Collections.emptyMap();
@@ -1068,7 +1117,48 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
      */
     @Override
     public void close() {
-        flushSession();
+        internalFlushSession();
+        dumpTracingInformation();
+    }
+
+    private void dumpTracingInformation() {
+        if (this.tracingExtents == null) {
+            return;
+        }
+        List<TracingExtent> tracingExtents = getActiveTracingExtents();
+        assert actor != null;
+        if (tracingExtents.isEmpty()) {
+            actor.printError(TranslatableComponent.of("worldedit.trace.no-tracing-extents"));
+            return;
+        }
+        // find the common stacks
+        Set<List<TracingExtent>> stacks = new LinkedHashSet<>();
+        Map<List<TracingExtent>, BlockVector3> stackToPosition = new HashMap<>();
+        Set<BlockVector3> touchedLocations = Collections.newSetFromMap(BlockMap.create());
+        for (TracingExtent tracingExtent : tracingExtents) {
+            touchedLocations.addAll(tracingExtent.getTouchedLocations());
+        }
+        for (BlockVector3 loc : touchedLocations) {
+            List<TracingExtent> stack = tracingExtents.stream()
+                    .filter(it -> it.getTouchedLocations().contains(loc))
+                    .collect(Collectors.toList());
+            boolean anyFailed = stack.stream()
+                .anyMatch(it -> it.getFailedActions().containsKey(loc));
+            if (anyFailed && stacks.add(stack)) {
+                stackToPosition.put(stack, loc);
+            }
+        }
+        stackToPosition.forEach((stack, position) -> {
+            // stack can never be empty, something has to have touched the position
+            TracingExtent failure = stack.get(0);
+            actor.printDebug(TranslatableComponent.builder("worldedit.trace.action-failed")
+                                                  .args(
+                    TextComponent.of(failure.getFailedActions().get(position).toString()),
+                    TextComponent.of(position.toString()),
+                    TextComponent.of(failure.getExtent().getClass().getName())
+                )
+                                                  .build());
+        });
     }
 
     /**
@@ -1086,16 +1176,20 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
      * Finish off the queue.
      */
     public void flushQueue() {
+        internalFlushSession();
+    }
+
+    private void internalFlushSession() {
         Operations.completeBlindly(commit());
         // Check fails
         FaweLimit used = getLimitUsed();
         if (used.MAX_FAILS > 0) {
             if (used.MAX_CHANGES > 0 || used.MAX_ENTITIES > 0) {
-                player.print(Caption.of("fawe.error.worldedit.some.fails", used.MAX_FAILS));
+                actor.print(Caption.of("fawe.error.worldedit.some.fails", used.MAX_FAILS));
             } else if (new ExtentTraverser<>(getExtent()).findAndGet(FaweRegionExtent.class) != null) {
-                player.print(Caption.of("fawe.cancel.worldedit.cancel.reason.outside.region"));
+                actor.print(Caption.of("fawe.cancel.worldedit.cancel.reason.outside.region"));
             } else {
-                player.print(Caption.of("fawe.cancel.worldedit.cancel.reason.outside.level"));
+                actor.print(Caption.of("fawe.cancel.worldedit.cancel.reason.outside.level"));
             }
         }
         if (wnaMode) {
@@ -1119,7 +1213,7 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
                 }
             }
         } catch (Throwable e) {
-            player.print(Caption.of("fawe.error.lighting"));
+            actor.print(Caption.of("fawe.error.lighting"));
             e.printStackTrace();
         }
         // Enqueue it

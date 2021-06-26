@@ -9,6 +9,7 @@ import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.command.tool.brush.Brush;
 import com.sk89q.worldedit.entity.Player;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.mask.Masks;
@@ -49,10 +50,14 @@ public class CopyPastaBrush implements Brush, ResettableTool {
 
     @Override
     public void build(EditSession editSession, BlockVector3 position, Pattern pattern, double size) throws MaxChangedBlocksException {
-        Player player = editSession.getPlayer();
-        if (player == null) {
+        Actor actor = editSession.getActor();
+        if (actor == null) {
             return;
         }
+        if (!(actor instanceof Player)) {
+            return; //todo throw error
+        }
+        Player player = (Player) actor;
         ClipboardHolder clipboard = session.getExistingClipboard();
         if (clipboard == null) {
             Mask mask = editSession.getMask();

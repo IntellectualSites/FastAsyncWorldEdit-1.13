@@ -23,6 +23,7 @@ import com.boydti.fawe.object.brush.scroll.Scroll;
 import com.google.common.collect.ImmutableSet;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.command.util.HookMode;
+import com.sk89q.worldedit.extent.TracingExtent;
 import com.sk89q.worldedit.util.SideEffect;
 import com.sk89q.worldedit.util.TreeGenerator;
 import org.enginehub.piston.CommandManager;
@@ -56,6 +57,8 @@ public final class EnumConverter {
                     null));
         commandManager.registerConverter(Key.of(HookMode.class),
             basic(HookMode.class));
+        commandManager.registerConverter(Key.of(TracingExtent.Action.class),
+            basic(TracingExtent.Action.class));
         commandManager.registerConverter(Key.of(Scroll.Action.class),
             basic(Scroll.Action.class));
     }

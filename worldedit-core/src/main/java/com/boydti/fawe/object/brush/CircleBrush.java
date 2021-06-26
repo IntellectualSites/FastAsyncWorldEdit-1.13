@@ -4,6 +4,7 @@ import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.command.tool.brush.Brush;
 import com.sk89q.worldedit.entity.Player;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.function.pattern.Pattern;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.Vector3;
@@ -20,12 +21,15 @@ public class CircleBrush implements Brush {
 
     @Override
     public void build(EditSession editSession, BlockVector3 position, Pattern pattern, double size) throws MaxChangedBlocksException {
-        Player player = editSession.getPlayer();
-        if (player == null) {
+        Actor actor = editSession.getActor();
+        if (actor == null) {
             return;
         }
-        Vector3 normal = position.toVector3().subtract(player.getLocation());
-        editSession.makeCircle(position, pattern, size, size, size, filled, normal);
+        if (actor instanceof Player) {
+            Player player = (Player) actor;
+            Vector3 normal = position.toVector3().subtract(player.getLocation());
+            editSession.makeCircle(position, pattern, size, size, size, filled, normal);
+        }
     }
 
     private Vector3 any90Rotate(Vector3 normal) {

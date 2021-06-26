@@ -167,6 +167,7 @@ public class LocalSession implements TextureHolder {
     private transient World worldOverride;
     private transient boolean tickingWatchdog = false;
     private transient boolean hasBeenToldVersion;
+    private transient boolean tracingActions;
 
     // Saved properties
     private String lastScript;
@@ -414,8 +415,8 @@ public class LocalSession implements TextureHolder {
             return;
         }
 
-        Player player = editSession.getPlayer();
-        int limit = player == null ? Integer.MAX_VALUE : player.getLimit().MAX_HISTORY;
+        Actor actor = editSession.getActor();
+        int limit = actor == null ? Integer.MAX_VALUE : actor.getLimit().MAX_HISTORY;
         remember(editSession, true, limit);
     }
 
@@ -508,9 +509,9 @@ public class LocalSession implements TextureHolder {
                 return;
             }
 
-            Player player = editSession.getPlayer();
-            if (player != null) {
-                loadSessionHistoryFromDisk(player.getUniqueId(), editSession.getWorld());
+            Actor actor = editSession.getActor();
+            if (actor != null) {
+                loadSessionHistoryFromDisk(actor.getUniqueId(), editSession.getWorld());
             }
             // Destroy any sessions after this undo point
             if (append) {
@@ -572,7 +573,7 @@ public class LocalSession implements TextureHolder {
                     .changeSetNull()
                     .fastmode(false)
                     .limitUnprocessed((Player)actor)
-                    .player((Player)actor)
+                    .actor((Player)actor)
                     .blockBag(getBlockBag((Player)actor))
                     .build()) {
                 newEditSession.setBlocks(changeSet, ChangeSetExecutor.Type.UNDO);
@@ -611,7 +612,7 @@ public class LocalSession implements TextureHolder {
                     .changeSetNull()
                     .fastmode(false)
                     .limitUnprocessed((Player)actor)
-                    .player((Player)actor)
+                    .actor((Player)actor)
                     .blockBag(getBlockBag((Player)actor))
                     .build()) {
                 newEditSession.setBlocks(changeSet, ChangeSetExecutor.Type.REDO);
@@ -641,6 +642,14 @@ public class LocalSession implements TextureHolder {
 
     public void setTickingWatchdog(boolean tickingWatchdog) {
         this.tickingWatchdog = tickingWatchdog;
+    }
+
+    public boolean isTracingActions() {
+        return tracingActions;
+    }
+
+    public void setTracingActions(boolean tracingActions) {
+        this.tracingActions = tracingActions;
     }
 
     /**
@@ -1518,7 +1527,7 @@ public class LocalSession implements TextureHolder {
         EditSessionBuilder builder = new EditSessionBuilder(world);
         if (actor.isPlayer() && actor instanceof Player) {
             BlockBag blockBag = getBlockBag((Player) actor);
-            builder.player((Player) actor);
+            builder.actor((Player) actor);
             builder.blockBag(blockBag);
         }
         builder.command(command);

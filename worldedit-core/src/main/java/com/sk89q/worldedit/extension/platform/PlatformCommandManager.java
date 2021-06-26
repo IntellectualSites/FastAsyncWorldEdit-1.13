@@ -758,6 +758,7 @@ public final class PlatformCommandManager {
                 EditSession editSession = editSessionOpt.get();
                 editSession.flushQueue();
                 session.remember(editSession);
+                editSession.close();
 
                 long time = System.currentTimeMillis() - start;
                 double timeS = (time / 1000.0);
