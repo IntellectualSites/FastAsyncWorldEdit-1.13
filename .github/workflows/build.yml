@@ -29,9 +29,9 @@ jobs:
       uses: "actions/cache@v2.1.6"
       with:
         path: "~/.m2/repository"
-        key: "${{ runner.os }}-11-maven-${{ hashFiles('**/pom.xml') }}"
+        key: "${{ runner.os }}-16-maven-${{ hashFiles('**/pom.xml') }}"
         restore-keys: |
-          "${{ runner.os }}-11-maven-"
+          "${{ runner.os }}-16-maven-"
     - name: "Cache BuildTools Decompiled Code"
       uses: "actions/cache@v2.1.6"
       with:
@@ -44,9 +44,9 @@ jobs:
     - name: "Download BuildTools"
       run: "wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"
     - name: "Run BuildTools"
-      run: "java -jar BuildTools.jar --rev 1.16.5"
+      run: "java -jar BuildTools.jar --rev 1.17"
     - name: "Clean Build"
-      run: "./gradlew clean build sourcesJar javadocJar -x test"
+      run: "./gradlew clean build sourcesJar javadocJar"
     - name: Cleanup Gradle Cache
       # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
       # Restoring these files from a GitHub Actions cache might cause problems for future builds.

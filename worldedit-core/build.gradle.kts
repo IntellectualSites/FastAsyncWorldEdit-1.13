@@ -12,7 +12,7 @@ applyPlatformAndCoreConfiguration()
 dependencies {
     constraints {
         implementation( "org.yaml:snakeyaml") {
-            version { strictly("1.27") }
+            version { strictly("1.28") }
             because("Bukkit provides SnakeYaml")
         }
     }
@@ -24,8 +24,8 @@ dependencies {
     implementation("com.google.guava:guava")
     implementation("com.google.code.findbugs:jsr305:3.0.2")
     implementation("com.google.code.gson:gson")
-    implementation("org.apache.logging.log4j:log4j-api:2.8.1") {
-        because("Mojang provides Log4J 2.8.1")
+    implementation("org.apache.logging.log4j:log4j-api:2.14.1") {
+        because("Mojang provides Log4J 2.14.1")
     }
     implementation("it.unimi.dsi:fastutil")
     compileOnly("net.kyori:adventure-nbt:4.8.1")
@@ -41,7 +41,7 @@ dependencies {
     annotationProcessor("com.google.guava:guava:21.0")
     compileOnly("com.google.auto.value:auto-value-annotations:${Versions.AUTO_VALUE}")
     annotationProcessor("com.google.auto.value:auto-value:${Versions.AUTO_VALUE}")
-    testRuntimeOnly("org.apache.logging.log4j:log4j-core:2.8.1")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
     implementation("com.github.luben:zstd-jni:1.5.0-2")
     compileOnly("net.fabiozumbi12:redprotect:1.9.6")
     api("com.github.intellectualsites.plotsquared:PlotSquared-API:4.514") { isTransitive = false }
