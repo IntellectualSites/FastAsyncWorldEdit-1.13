@@ -113,7 +113,7 @@ dependencies {
     implementation("com.bekvon.bukkit.residence:Residence:4.5._13.1") { isTransitive = false }
     implementation("com.palmergames.bukkit:towny:0.84.0.9") { isTransitive = false }
     implementation("com.thevoxelbox.voxelsniper:voxelsniper:5.171.0") { isTransitive = false }
-    implementation("com.comphenix.protocol:ProtocolLib:4.6.0") { isTransitive = false }
+    implementation("com.comphenix.protocol:ProtocolLib:4.7.0") { isTransitive = false }
     implementation("org.incendo.serverlib:ServerLib:2.2.1")
     api("com.plotsquared:PlotSquared-Bukkit:6.0.6-SNAPSHOT")
 }
