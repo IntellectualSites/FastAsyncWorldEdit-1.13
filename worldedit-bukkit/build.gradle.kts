@@ -94,7 +94,7 @@ dependencies {
     }
     compileOnly("net.kyori:adventure-api:4.8.1")
     testImplementation("net.kyori:adventure-api:4.8.1")
-    testImplementation("org.checkerframework:checker-qual:3.15.0")
+    testImplementation("org.checkerframework:checker-qual:3.16.0")
     testImplementation("org.spigotmc:spigot-api:1.17-R0.1-SNAPSHOT") { isTransitive = true }
     api("com.intellectualsites.paster:Paster:1.0.1-SNAPSHOT")
     api("org.lz4:lz4-java:1.8.0")
